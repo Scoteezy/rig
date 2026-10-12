@@ -1,6 +1,6 @@
 ---
 name: guided-review
-description: Use whenever someone asks to review, tour, walk through, or explain a change (a PR, a branch, commits, the work in this worktree), in any language and however it is phrased ("review this", "ревью", "что мы тут поменяли"), or asks to have a subsystem explained with a picture rather than prose. Writes a Happy UI block the transcript draws in place; a review adds its findings below it.
+description: Use whenever someone asks to review, tour, walk through, or explain a change (a PR, a branch, commits, the work in this worktree), in any language and however it is phrased ("review this", "ревью", "что мы тут поменяли"), or asks to have a subsystem explained with a picture rather than prose. Writes a Happy UI block the transcript draws in place; a review puts its verdict and findings inside it.
 ---
 
 # Guided review in the chat
@@ -14,14 +14,43 @@ The tour is a ` ```happy-ui ` fence in your reply. Happy draws it with its own
 components, in the conversation, once the fence closes. Nothing else is
 needed: no panel, no file, no HTML.
 
-## A review is a tour, then findings
+## A review is a tour with its findings inside
 
-When someone asks to review a change, the answer opens with the tour, so the
-reader first learns what the change does, and then gives the review below the
-fence in ordinary Markdown: the verdict, each problem with its `path:line`
-and why it matters, worst first, then what is good. The tour stays neutral;
-judgements belong in the findings, never inside the block. A narrow question
-about one bug or one file is answered directly, without a tour.
+When someone asks to review a change, write the tour and put the review in
+it, so each problem sits beside the code it is about:
+
+- A `verdict` right after `context`: one or two sentences saying whether
+  the change can go in and what must happen first. Happy counts the findings
+  by severity above it, so never count them yourself.
+- Each problem is a `finding` inside the chapter whose code it concerns,
+  after that chapter's diffs, with `path` and `lines` on the exact lines
+  that are wrong; Happy draws those real lines in the finding. A problem with
+  the change as a whole, not one place, is a `finding` after the chapters,
+  without lines.
+- `severity` is `high` (must be fixed before it goes in), `medium` (should
+  be fixed), or `low` (worth knowing). `title` says what is wrong, `text`
+  why it matters, and `fix` what to do, each in a sentence or two.
+- What is good goes in the verdict, briefly. A chapter with nothing wrong
+  simply has no finding.
+
+```
+{ "type": "verdict", "text": "Safe to merge once the retry loop stops on errors." },
+...
+{
+  "type": "finding",
+  "severity": "high",
+  "title": "A failed read is retried on every render",
+  "text": "The error is not remembered, so each render starts the same read again and the requests never stop.",
+  "path": "packages/state/src/store.ts",
+  "lines": { "startLine": 200, "endLine": 226 },
+  "fix": "Keep the error with the revision it failed at and read again only when that moves."
+}
+```
+
+After the fence, write at most a sentence or two, only for what you could not
+check (tests you did not run, a screen you did not open). Nothing the block
+already says is repeated outside it. A narrow question about one bug or one
+file is answered directly, without a tour.
 
 ## Rules that make a tour trustworthy
 
@@ -91,14 +120,16 @@ about one bug or one file is answered directly, without a tour.
 
 Nodes, and nothing else:
 
-| Node          | Fields                                           | Use                                                                  |
-| ------------- | ------------------------------------------------ | -------------------------------------------------------------------- |
-| `context`     | `text`                                           | One sentence. First node of every tour.                              |
-| `steps`       | `items`                                          | The steps the change takes, in order.                                |
-| `beforeAfter` | `before`, `after`, `beforeImage?`, `afterImage?` | Behaviour before and after. At least one. Images are screenshots.    |
-| `chapter`     | `role`, `title`, `text`, `files`, `children?`    | One idea and its files. `children` holds diff or mermaid nodes only. |
-| `diff`        | `path`, `lines: { startLine, endLine }`          | Real lines from the change at that place.                            |
-| `mermaid`     | `source`                                         | A diagram, when the shape of a thing matters.                        |
+| Node          | Fields                                                 | Use                                                               |
+| ------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `context`     | `text`                                                 | One sentence. First node of every tour.                           |
+| `steps`       | `items`                                                | The steps the change takes, in order.                             |
+| `beforeAfter` | `before`, `after`, `beforeImage?`, `afterImage?`       | Behaviour before and after. At least one. Images are screenshots. |
+| `chapter`     | `role`, `title`, `text`, `files`, `children?`          | One idea and its files. `children` holds diff, mermaid, finding.  |
+| `diff`        | `path`, `lines: { startLine, endLine }`                | Real lines from the change at that place.                         |
+| `mermaid`     | `source`                                               | A diagram, when the shape of a thing matters.                     |
+| `verdict`     | `text`                                                 | A review's conclusion, after `context`. At most one.              |
+| `finding`     | `severity`, `title`, `text`, `path?`, `lines?`, `fix?` | One problem a review found, where it is.                          |
 
 ## Show a visible change
 
@@ -182,6 +213,9 @@ files, and its chapters need no role.
 
 ## Before you send it
 
+- Is this a review? Then is there a `verdict` after `context`, and is every
+  problem a `finding` in the chapter it concerns, pointing at its lines?
+
 - Is it this branch's work? Then is there a `base` from `git merge-base`?
   Is it any other change? Then is there a `range` from `git rev-parse`?
 - Does every changed file — `git diff --name-only <merge base>` plus
@@ -196,5 +230,5 @@ files, and its chapters need no role.
 - Does every core and supporting chapter have its `text`?
 - Is every line range checked against the current file?
 
-Then write one short sentence before the fence and send the fence. For a
-review, write the findings after it; otherwise stop. Happy draws the rest.
+Then write one short sentence before the fence and send the fence. After it,
+only what you could not check, if anything. Happy draws the rest.
