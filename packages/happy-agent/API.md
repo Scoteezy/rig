@@ -3892,6 +3892,23 @@ The git state object:
 The current git state, scanning if nothing fresh is cached. Response — `200`:
 `{ "git": { ... } }`; `404` for a workspace without a repository.
 
+#### `GET /v0/workspaces/:workspaceId/git/compare`
+
+Lists the files that differ between two commits, for reviewing a change that is not the
+workspace's live one. Query parameters: `base` and `head`, each a commit-ish.
+
+Response — `200`:
+`{ "files": [{ "path": "sources/main.ts", "status": "modified" }], "filesTruncated": false }`
+
+- `files` — every path that differs from `base` to `head`, in Git's order; `status` is
+  `"added"`, `"modified"`, `"deleted"`, `"renamed"`, `"copied"`, `"type_changed"`, or
+  `"submodule"`. A rename lists its new path.
+- `filesTruncated` — `true` when the list was capped.
+
+`404` for a workspace without a repository; `400` when `base` or `head` does not name a
+commit. This endpoint is additive and does not increment the protocol version; an older daemon
+answers `404`, and a client treats that as "cannot be listed".
+
 #### `POST /v0/git/watch`
 
 Subscribes workspaces to the daemon's one live git watcher. Watching is a subscription, not a
