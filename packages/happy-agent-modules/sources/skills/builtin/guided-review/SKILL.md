@@ -148,9 +148,22 @@ Nodes, and nothing else:
 | `beforeAfter` | `before`, `after`, `beforeImage?`, `afterImage?`       | Behaviour before and after. Images are screenshots.     |
 | `chapter`     | `role`, `title`, `text`, `children?`                   | One idea. `children` holds diff, mermaid, finding.      |
 | `diff`        | `path`, `lines: { startLine, endLine }`                | Real lines from the change at that place.               |
-| `mermaid`     | `source`                                               | A diagram, when the shape of a thing matters.           |
+| `mermaid`     | `source`                                               | A small diagram, when the shape of a thing matters.     |
 | `verdict`     | `text`                                                 | A review's conclusion, after `context`. At most one.    |
 | `finding`     | `severity`, `title`, `text`, `path?`, `lines?`, `fix?` | One problem a review found, where it is.                |
+
+## Diagrams are read in a narrow column
+
+A block is drawn in a chat column, often beside two panels. A diagram that
+does not fit it is not shrunk until its words vanish; it keeps its size and
+the reader has to scroll it. So draw one that fits:
+
+- At most six nodes, and only when the shape of the thing is the point.
+- A label is one to three words. Never a sentence, and never a path.
+- Prefer `flowchart TD`: a column is taller than it is wide. Use `LR` only
+  for three or four short nodes.
+- No decision diamonds carrying a question, no edge labels longer than a
+  word, no subgraphs unless the grouping is the idea.
 
 ## Show a visible change
 
