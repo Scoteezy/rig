@@ -553,7 +553,7 @@ describe("SkillsModule", () => {
             }),
         ]);
         const document = await module.read(ctx, agentId, { name: "guided-review" });
-        expect(document.content).toContain("```happy-ui");
+        expect(document.content).toContain("```happy-diff");
 
         compute.write(
             "/workspace/.agents/skills/guided-review/SKILL.md",

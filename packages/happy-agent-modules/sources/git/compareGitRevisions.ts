@@ -7,7 +7,12 @@ export const gitRevisionComparisonSchema = Type.Object(
     {
         files: Type.Array(
             Type.Object(
-                { path: Type.String({ minLength: 1 }), status: gitDiffChangeKindSchema },
+                {
+                    path: Type.String({ minLength: 1 }),
+                    status: gitDiffChangeKindSchema,
+                    insertions: Type.Optional(Type.Integer({ minimum: 0 })),
+                    deletions: Type.Optional(Type.Integer({ minimum: 0 })),
+                },
                 { additionalProperties: false },
             ),
         ),
@@ -36,9 +41,10 @@ export class GitRevisionNotCommitError extends Error {
 const COMMIT = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u;
 
 /**
- * Every path that differs from one commit to another, in Git's order. A rename lists its new
- * path. The list stops at `maximumFiles`, and at a whole record when Git's output is cut short;
- * either way `filesTruncated` says so.
+ * Every path that differs from one commit to another, in Git's order, with its line counts
+ * unless it is binary or a submodule. A rename lists its new path. The list stops at
+ * `maximumFiles`, and at a whole record when Git's output is cut short; either way
+ * `filesTruncated` says so.
  */
 export async function compareGitRevisions(options: {
     base: string;
@@ -88,15 +94,18 @@ export async function compareGitRevisions(options: {
     };
     const base = await commit(options.base);
     const head = await commit(options.head);
-    const result = await run(["diff", "-z", "--raw", "--find-renames", base, head]);
+    const result = await run(["diff", "-z", "--raw", "--numstat", "--find-renames", base, head]);
     const changes = parseGitRawNumstat(
         result.truncated
             ? result.stdout.slice(0, result.stdout.lastIndexOf("\0") + 1)
             : result.stdout,
     ).filter((change) => change.path.length > 0);
-    const files = changes
-        .slice(0, options.maximumFiles)
-        .map((change) => ({ path: change.path, status: change.kind }));
+    const files = changes.slice(0, options.maximumFiles).map((change) => ({
+        path: change.path,
+        status: change.kind,
+        ...(change.insertions === undefined ? {} : { insertions: change.insertions }),
+        ...(change.deletions === undefined ? {} : { deletions: change.deletions }),
+    }));
     return {
         files,
         filesTruncated: result.truncated || changes.length > files.length,

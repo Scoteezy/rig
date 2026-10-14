@@ -75,9 +75,12 @@ export const gitCompareFileStatusSchema = Type.Union([
 ]);
 export type GitCompareFileStatus = Static<typeof gitCompareFileStatusSchema>;
 
+/** `insertions` and `deletions` count changed lines; absent for a binary file or a submodule. */
 export const gitCompareFileSchema = Type.Object({
     path: Type.String({ minLength: 1 }),
     status: gitCompareFileStatusSchema,
+    insertions: Type.Optional(Type.Integer({ minimum: 0 })),
+    deletions: Type.Optional(Type.Integer({ minimum: 0 })),
 });
 export type GitCompareFile = Static<typeof gitCompareFileSchema>;
 

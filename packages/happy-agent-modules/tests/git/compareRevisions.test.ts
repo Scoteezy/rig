@@ -40,10 +40,10 @@ describe("comparing two commits", () => {
         expect(
             [...comparison.files].sort((left, right) => left.path.localeCompare(right.path)),
         ).toEqual([
-            { path: "added.txt", status: "added" },
-            { path: "edited.txt", status: "modified" },
-            { path: "kept.txt", status: "deleted" },
-            { path: "renamed.txt", status: "renamed" },
+            { path: "added.txt", status: "added", insertions: 1, deletions: 0 },
+            { path: "edited.txt", status: "modified", insertions: 1, deletions: 1 },
+            { path: "kept.txt", status: "deleted", insertions: 0, deletions: 1 },
+            { path: "renamed.txt", status: "renamed", insertions: 0, deletions: 0 },
         ]);
     });
 
@@ -60,7 +60,7 @@ describe("comparing two commits", () => {
                 path: repository,
             }),
         ).resolves.toEqual({
-            files: [{ path: "second.txt", status: "added" }],
+            files: [{ path: "second.txt", status: "added", insertions: 1, deletions: 0 }],
             filesTruncated: true,
         });
         await expect(
